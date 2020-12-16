@@ -7,3 +7,5 @@
    2. Validar se existe conflitos, se não, fazer o merge automático
 4. Efetuar rebase de merge para dev
 5. Fazer o push na branch dev
+
+---

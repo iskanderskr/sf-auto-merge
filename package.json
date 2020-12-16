@@ -2,7 +2,6 @@
   "name": "sf-auto-merge",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "main": "gulpfile.js",
   "scripts": {
     "gulp": "gulp",

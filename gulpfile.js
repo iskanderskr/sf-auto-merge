@@ -1,60 +1,66 @@
+const env = require('dotenv').config()
 const gulp = require('gulp')
 const git = require('gulp-git')
 
-const pull = (origin, branch) =>{
-    git.pull(origin, branch, function (err) {
-        //if (err) ...
-    });
+let file
+
+const commiting = () => {
+    console.log('+----------------------------------------------+')
+    console.log('starting commiting')
+    git.add({ cwd: env.parsed.FOLDER_WATCHED })
+    console.log('git add')
+    git.commit(
+        `${env.parsed.HISTORY_JIRA} | ${file} | ${env.parsed.HISTORY_DESCRIPTION}`,
+        { cwd: env.parsed.FOLDER_WATCHED }
+    )
+    console.log('git commit')
 }
 
-const push = (origin, branch) =>{
-    git.push(origin, branch, function (err) {
-        //if (err) ...
-    });
-}
-
-const createBranchMerge = () => {
-    git.checkout('merge', {args:'-b'}, function (err) {
-
-    });
-}
-
-const merge = (branch) => {
-    git.merge(branch, function (err) {
-        //if (err) ...
-    })
-}
-
-const commiting = (message) => {
-    return new Promise((resolve)=>{
-        git.add()
-        git.commit(message)
-    })
-}
-
-const merging = (message) => {
-    const merge = () =>{
-
+const merging = () => {
+    console.log('finishing commiting')
+    console.log('+----------------------------------------------+\n\n')
+    console.log('starting merging')
+    const merge = (err) => {
+        if(err) return err;
     }
 
-    return new Promise((resolve)=>{
-        git.checkout('merge', {args:'-b'}, () => merge());
-    })
+    const pullBranch = (err) => {
+        if(err) return err;
+        git.pull(
+            'origin',
+            env.parsed.ACTUAL_BRANCH, 
+            { cwd: env.parsed.FOLDER_WATCHED }, 
+            (err) => merge(err)
+        )
+    }
+
+    git.checkout(
+        'merge',
+        { args:'-b', cwd: env.parsed.FOLDER_WATCHED },
+        (err) => pullBranch(err)
+    )
 }
 
-const deploying = (message) => {
-    return new Promise((resolve)=>{
-        git.add()
-        git.commit(message)
-        resolve(process.env.ACTUAL_BRANCH)
-    })
+const deploying = () => {
+    console.log('finishing merging')
+    console.log('+----------------------------------------------+\n\n')
+
+    console.log('starting deploying')
+
+    console.log('finishing deploying')
+    console.log('+----------------------------------------------+\n\n')
 }
 
+exports.default = () => {
+    return gulp.watch([env.parsed.FOLDER_WATCHED + '/**/*.*'])
+        .on("all", (event, file, status) => {
+            file = file.slice(file.lastIndexOf('\\') + 1)
+            console.log('event', event)
+            // console.log('file', file)
+            // console.log('status', status)
 
-module.exports = () => {
-    return commiting()
-            .then(merging)
-            .then(deploying)
-            .then(() => console.log('Sucesso'))
-            .catch(err=> console.error(err))
+            commiting()
+            merging()
+            deploying()
+        })
 }

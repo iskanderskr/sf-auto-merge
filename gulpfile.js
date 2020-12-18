@@ -1,13 +1,11 @@
 const env = require('dotenv').config()
 const gulp = require('gulp')
 const git = require('gulp-git')
-const { exec } = require("child_process");
+const { exec } = require("child_process")
 
 let fileName, fileUrl, watcher
 
-const commiting = () => {
-    watcher.close();
-    watcher = null
+const commiting = async () => {
     console.log('+----------------------------------------------+')
     console.log('starting commiting')
     return new Promise(resolve =>{
@@ -17,17 +15,26 @@ const commiting = () => {
         const nameCommit = `${env.parsed.HISTORY_NAME} | ${fileName} | ${env.parsed.HISTORY_DESCRIPTION}`;
         exec(
             `cd ${env.parsed.FOLDER_WATCHED} && git commit -am "${nameCommit}"`,
-            ()=> resolve()
+            (err, stdout)=> {
+                console.log(stdout, stdout.indexOf('nothing to commit') !== -1)
+                if(stdout.indexOf('nothing to commit') !== -1){
+                    resolve(true)
+                }
+                console.log("Nada para commitar")
+                resolve(false)
+            }
         )
     })
 }
 
-const merging = () => {
+const merging = (res) => {
     console.log('finishing commiting')
     console.log('+----------------------------------------------+\n\n')
+    
     console.log('starting merging')
 
-    return new Promise(resolve=>{
+    return new Promise((resolve, reject)=>{
+        if(res) reject(false)
         git.checkout(
             'merge',
             { args:'-b', cwd: env.parsed.FOLDER_WATCHED },
@@ -42,7 +49,7 @@ const merging = () => {
             git.pull(
                 'origin',
                 env.parsed.ACTUAL_BRANCH, 
-                { cwd: env.parsed.FOLDER_WATCHED }, 
+                { args: '-f', cwd: env.parsed.FOLDER_WATCHED }, 
                 (err) => resolve(err)
             )
         })
@@ -98,12 +105,13 @@ const merging = () => {
     
 }
 
-const deploying = () => {
+const deploying = (res) => {
     console.log('finishing merging')
     console.log('+----------------------------------------------+\n\n')
-
     console.log('starting deploying')
-    return new Promise(resolve=>{
+    return new Promise((resolve, reject)=>{
+        if(res) reject(false)
+        
         git.push(
             'origin',
             env.parsed.ACTUAL_BRANCH.toString(), 
@@ -143,6 +151,7 @@ const deploying = () => {
             commiting()
                 .then(()=>merging())
                 .then(()=>deploying())
+                .catch((error)=>console.log(error))
         })
     })
 }
@@ -155,7 +164,6 @@ exports.default = () => {
         console.log('event', event)
         // console.log('file', file)
         // console.log('status', status)
-
         commiting()
             .then(()=>merging())
             .then(()=>deploying())

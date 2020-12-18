@@ -12,7 +12,6 @@
   "dependencies": {
     "dotenv": "8.2.0",
     "gulp": "4.0.2",
-    "gulp-git": "2.10.1",
-    "gulp-exec": "5.0.0"
+    "gulp-git": "2.10.1"
   }
 }

@@ -3,6 +3,29 @@ const gulp = require('gulp')
 const git = require('gulp-git')
 const { exec } = require("child_process")
 
+let watcher
+const stop = async ()=>{
+    return new Promise(resolve=>{
+        watcher.close()
+        watcher = null
+        resolve()
+    })
+}
+
+const open = ()=>{
+    watcher = gulp.watch([env.parsed.FOLDER_WATCHED + '/**/*.*'])
+        .on("all", (event, file, status) => {
+            fileUrl = file
+            fileName = file.slice(file.lastIndexOf('\\') + 1)
+
+            stop()
+                .then((res)=>commiting(res))
+                .then((res)=>merging(res))
+                .then((res)=>deploying(res))
+                .then((res)=>open(res))
+        })
+}
+
 const commiting = async () => {
     console.log('+----------------------------------------------+')
     console.log('+-- Starting commiting')
@@ -25,7 +48,7 @@ const commiting = async () => {
     })
 }
 
-const merging = (res) => {
+const merging = async (res) => {
     console.log('+-- Finishing commiting')
     console.log('+----------------------------------------------+\n\n')
     if(!res && typeof res === 'boolean') return new Promise((resolve)=>{resolve(false)})
@@ -96,7 +119,7 @@ const merging = (res) => {
     
 }
 
-const deploying = (res) => {
+const deploying = async (res) => {
     if(!res && typeof res === 'boolean') return new Promise((resolve)=>{resolve(false)})
     
     return new Promise((resolve)=>{
@@ -134,15 +157,15 @@ const deploying = (res) => {
 }
 
 exports.default = () => {
-    gulp.watch([env.parsed.FOLDER_WATCHED + '/**/*.*'])
+    watcher = gulp.watch([env.parsed.FOLDER_WATCHED + '/**/*.*'])
         .on("all", (event, file, status) => {
             fileUrl = file
             fileName = file.slice(file.lastIndexOf('\\') + 1)
-            console.log('event', event)
-            // console.log('file', file)
-            // console.log('status', status)
-            commiting()
+
+            stop()
+                .then((res)=>commiting(res))
                 .then((res)=>merging(res))
                 .then((res)=>deploying(res))
+                .then((res)=>open(res))
         })
 }
